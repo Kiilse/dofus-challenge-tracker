@@ -1,7 +1,8 @@
+# Railpack (défaut Railway) ne supporte pas Bun : build explicite via Dockerfile.
 [build]
-builder = "nixpacks"
+builder = "DOCKERFILE"
 
 [deploy]
-startCommand = "bun run src/index.ts"
+startCommand = "bun run start"
 preDeployCommand = "bun run db:migrate"
-restartPolicyType = "on_failure"
+restartPolicyType = "ON_FAILURE"

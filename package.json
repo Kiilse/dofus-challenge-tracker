@@ -4,6 +4,7 @@
   "type": "module",
   "packageManager": "bun@1.2.8",
   "scripts": {
+    "start": "bun run src/index.ts",
     "dev": "bun run src/index.ts",
     "deploy-commands": "bun run scripts/deploy-commands.ts",
     "db:generate": "drizzle-kit generate",
