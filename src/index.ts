@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits } from 'discord.js';
-import { config } from './config.ts';
 import { commands } from './commands/index.ts';
+import { config } from './config.ts';
 import { registerInteractionHandler } from './interactions/interactionCreate.ts';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });

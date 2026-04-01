@@ -1,8 +1,8 @@
 import type {
+  ChatInputCommandInteraction,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
   SlashCommandSubcommandsOnlyBuilder,
-  ChatInputCommandInteraction,
 } from 'discord.js';
 
 export interface Command {

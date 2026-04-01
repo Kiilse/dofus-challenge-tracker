@@ -1,56 +1,76 @@
-import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from 'discord.js';
-import type { Command } from '../types/Command.ts';
+import {
+  type ChatInputCommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from 'discord.js';
 import { getScoreboard } from '../db/repositories/failedRepository.ts';
-
-const MEDALS = ['🥇', '🥈', '🥉'];
+import { requireGuildId } from '../discord/requireGuild.ts';
+import {
+  formatFailCount,
+  rankingMedalForIndex,
+  resolveMemberDisplayName,
+} from '../presentation/ranking.ts';
+import { embedColors } from '../presentation/theme.ts';
+import type { Command } from '../types/Command.ts';
 
 export const scoreboard: Command = {
   data: new SlashCommandBuilder()
     .setName('scoreboard')
-    .setDescription('Affiche le classement des challenges ratés sur ce serveur'),
+    .setDescription(
+      'Affiche le classement des challenges ratés sur ce serveur',
+    ),
 
   async execute(interaction: ChatInputCommandInteraction) {
+    const guildId = await requireGuildId(interaction);
+    if (guildId === undefined) return;
+
+    const guild = interaction.guild;
+    if (!guild) {
+      await interaction.reply({
+        content: 'Serveur introuvable.',
+        ephemeral: true,
+      });
+      return;
+    }
+
     await interaction.deferReply();
 
-    const guildId = interaction.guildId!;
     const { linked, unlinked } = await getScoreboard(guildId);
 
     const embed = new EmbedBuilder()
-      .setColor(0xf39c12)
+      .setColor(embedColors.scoreboard)
       .setTitle('🏆 Classement des challenges ratés')
       .setTimestamp();
 
-    if (linked.length === 0 && (!unlinked || (unlinked as unknown[]).length === 0)) {
+    if (linked.length === 0 && unlinked.length === 0) {
       embed.setDescription('Aucun challenge raté enregistré pour ce serveur.');
       await interaction.editReply({ embeds: [embed] });
       return;
     }
 
-    // Linked accounts section
     if (linked.length > 0) {
       const lines = await Promise.all(
         linked.map(async (row, i) => {
-          const medal = MEDALS[i] ?? `${i + 1}.`;
-          let name: string;
-          try {
-            const member = await interaction.guild!.members.fetch(row.discordId);
-            name = member.displayName;
-          } catch {
-            name = `<@${row.discordId}>`;
-          }
-          return `${medal} **${name}** — ${row.totalFails} fail${Number(row.totalFails) !== 1 ? 's' : ''}`;
+          const medal = rankingMedalForIndex(i);
+          const displayName = await resolveMemberDisplayName(
+            guild,
+            row.discordId,
+          );
+          return `${medal} **${displayName}** — ${formatFailCount(row.totalFails)}`;
         }),
       );
       embed.addFields({ name: 'Comptes Discord', value: lines.join('\n') });
     }
 
-    // Unlinked characters section
-    const unlinkedRows = unlinked as { dofus_pseudo: string; total_fails: number }[];
-    if (unlinkedRows.length > 0) {
-      const lines = unlinkedRows.map(
-        (row) => `• **${row.dofus_pseudo}** — ${row.total_fails} fail${row.total_fails !== 1 ? 's' : ''}`,
+    if (unlinked.length > 0) {
+      const lines = unlinked.map(
+        (row) =>
+          `• **${row.dofusPseudo}** — ${formatFailCount(row.totalFails)}`,
       );
-      embed.addFields({ name: 'Personnages non liés', value: lines.join('\n') });
+      embed.addFields({
+        name: 'Personnages non liés',
+        value: lines.join('\n'),
+      });
     }
 
     await interaction.editReply({ embeds: [embed] });

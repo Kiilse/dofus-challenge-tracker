@@ -1,12 +1,11 @@
-import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from 'discord.js';
+import {
+  type ChatInputCommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from 'discord.js';
+import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';
-
-const LINES = [
-  '`/link` — Associe un personnage Dofus à un compte Discord (option admin : cibler un autre utilisateur).',
-  '`/failed` — Une phrase : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge` (1er mot = perso, fin = challenge).',
-  '`/scoreboard` — Classement des challenges ratés sur le serveur.',
-  '`/adventure` — Aventures : `create`, `view`, `list` (tableaux de score parallèles).',
-] as const;
+import { buildHelpDescriptionLines } from './helpLines.ts';
 
 export const help: Command = {
   data: new SlashCommandBuilder()
@@ -15,9 +14,9 @@ export const help: Command = {
 
   async execute(interaction: ChatInputCommandInteraction) {
     const embed = new EmbedBuilder()
-      .setColor(0x3498db)
+      .setColor(embedColors.help)
       .setTitle('Commandes du bot')
-      .setDescription(LINES.join('\n\n'));
+      .setDescription(buildHelpDescriptionLines().join('\n\n'));
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   },
