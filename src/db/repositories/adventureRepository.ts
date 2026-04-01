@@ -1,6 +1,6 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../client.ts';
-import { adventures, adventureMembers } from '../schema.ts';
+import { adventureMembers, adventures } from '../schema.ts';
 
 export async function createAdventure(
   guildId: string,
@@ -16,7 +16,10 @@ export async function createAdventure(
   if (!adventure) throw new Error('Failed to create adventure');
 
   await db.insert(adventureMembers).values(
-    pseudos.map((dofusPseudo) => ({ adventureId: adventure.id, dofusPseudo })),
+    pseudos.map((dofusPseudo) => ({
+      adventureId: adventure.id,
+      dofusPseudo,
+    })),
   );
 
   return adventure;

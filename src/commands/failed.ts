@@ -1,13 +1,19 @@
-import { SlashCommandBuilder, EmbedBuilder, type ChatInputCommandInteraction } from 'discord.js';
-import type { Command } from '../types/Command.ts';
+import {
+  type ChatInputCommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from 'discord.js';
 import { recordFailure } from '../db/repositories/failedRepository.ts';
 import { findByPseudo } from '../db/repositories/linkRepository.ts';
+import { requireGuildId } from '../discord/requireGuild.ts';
+import { embedColors } from '../presentation/theme.ts';
+import type { Command } from '../types/Command.ts';
 
-/** Premier mot = pseudo Dofus ; la fin après « le challenge » = nom du challenge. */
-const FAILED_PATTERN =
-  /^(\S+)\s+a\s+fait\s+échouer\s+le\s+challenge\s+(.+)$/iu;
+const FAILED_PATTERN = /^(\S+)\s+a\s+fait\s+échouer\s+le\s+challenge\s+(.+)$/iu;
 
-function parseFailedPhrase(raw: string): { pseudo: string; challenge: string } | null {
+export function parseFailedPhrase(
+  raw: string,
+): { pseudo: string; challenge: string } | null {
   const phrase = raw.trim().normalize('NFC');
   const match = FAILED_PATTERN.exec(phrase);
   if (!match) return null;
@@ -30,7 +36,9 @@ export const failed = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const guildId = interaction.guildId!;
+    const guildId = await requireGuildId(interaction);
+    if (guildId === undefined) return;
+
     const phrase = interaction.options.getString('phrase', true);
 
     const parsed = parseFailedPhrase(phrase);
@@ -51,7 +59,7 @@ export const failed = {
     const accountMention = link ? ` (<@${link.discordId}>)` : '';
 
     const embed = new EmbedBuilder()
-      .setColor(0xe74c3c)
+      .setColor(embedColors.failed)
       .setTitle('Challenge raté !')
       .setDescription(
         `**${dofusPseudo}**${accountMention} a fait échouer le challenge **${challenge}** !`,

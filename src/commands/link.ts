@@ -1,11 +1,13 @@
 import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  EmbedBuilder,
   type ChatInputCommandInteraction,
+  EmbedBuilder,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
 } from 'discord.js';
-import type { Command } from '../types/Command.ts';
 import { upsertLink } from '../db/repositories/linkRepository.ts';
+import { requireGuildId } from '../discord/requireGuild.ts';
+import { embedColors } from '../presentation/theme.ts';
+import type { Command } from '../types/Command.ts';
 
 export const link: Command = {
   data: new SlashCommandBuilder()
@@ -25,15 +27,29 @@ export const link: Command = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const guildId = interaction.guildId!;
-    const dofusPseudo = interaction.options.getString('pseudo_dofus', true).trim();
+    const guildId = await requireGuildId(interaction);
+    if (guildId === undefined) return;
+
+    const guild = interaction.guild;
+    if (!guild) {
+      await interaction.reply({
+        content: 'Serveur introuvable.',
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const dofusPseudo = interaction.options
+      .getString('pseudo_dofus', true)
+      .trim();
     const targetUser = interaction.options.getUser('discord_user');
 
     if (targetUser) {
-      const member = await interaction.guild!.members.fetch(interaction.user.id);
+      const member = await guild.members.fetch(interaction.user.id);
       if (!member.permissions.has(PermissionFlagsBits.ManageGuild)) {
         await interaction.reply({
-          content: "Tu dois avoir la permission **Gérer le serveur** pour lier un perso à quelqu'un d'autre.",
+          content:
+            "Tu dois avoir la permission **Gérer le serveur** pour lier un perso à quelqu'un d'autre.",
           ephemeral: true,
         });
         return;
@@ -44,9 +60,11 @@ export const link: Command = {
     await upsertLink(guildId, discordId, dofusPseudo);
 
     const embed = new EmbedBuilder()
-      .setColor(0x4e9af1)
+      .setColor(embedColors.link)
       .setTitle('Liaison enregistrée')
-      .setDescription(`Le personnage **${dofusPseudo}** est maintenant lié à <@${discordId}>.`);
+      .setDescription(
+        `Le personnage **${dofusPseudo}** est maintenant lié à <@${discordId}>.`,
+      );
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   },
