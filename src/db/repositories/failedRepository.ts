@@ -1,6 +1,18 @@
-import { eq, and, sql, count, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../client.ts';
 import { failedChallenges, userLinks } from '../schema.ts';
+
+export type ScoreboardLinkedRow = {
+  discordId: string;
+  totalFails: number;
+};
+
+export type ScoreboardUnlinkedRow = {
+  dofusPseudo: string;
+  totalFails: number;
+};
+
+type UnlinkedSqlRow = { dofus_pseudo: string; total_fails: number };
 
 export async function recordFailure(
   guildId: string,
@@ -8,12 +20,21 @@ export async function recordFailure(
   challenge: string,
   recordedBy: string,
 ) {
-  await db.insert(failedChallenges).values({ guildId, dofusPseudo, challenge, recordedBy });
+  await db
+    .insert(failedChallenges)
+    .values({ guildId, dofusPseudo, challenge, recordedBy });
 }
 
-export async function getScoreboard(guildId: string) {
-  // Per Discord account: sum of fails across all linked characters
-  const linked = await db
+function rowsFromExecute<T>(result: { rows?: T[] } | T[]): T[] {
+  if (Array.isArray(result)) return result;
+  return result.rows ?? [];
+}
+
+export async function getScoreboard(guildId: string): Promise<{
+  linked: ScoreboardLinkedRow[];
+  unlinked: ScoreboardUnlinkedRow[];
+}> {
+  const linkedRaw = await db
     .select({
       discordId: userLinks.discordId,
       totalFails: count(failedChallenges.id),
@@ -30,8 +51,12 @@ export async function getScoreboard(guildId: string) {
     .groupBy(userLinks.discordId)
     .orderBy(sql`count(${failedChallenges.id}) desc`);
 
-  // Unlinked characters that have failures
-  const unlinked = await db.execute<{ dofus_pseudo: string; total_fails: number }>(sql`
+  const linked: ScoreboardLinkedRow[] = linkedRaw.map((row) => ({
+    discordId: row.discordId,
+    totalFails: Number(row.totalFails),
+  }));
+
+  const unlinkedResult = await db.execute<UnlinkedSqlRow>(sql`
     SELECT fc.dofus_pseudo, COUNT(fc.id)::int AS total_fails
     FROM failed_challenges fc
     WHERE fc.guild_id = ${guildId}
@@ -44,10 +69,20 @@ export async function getScoreboard(guildId: string) {
     ORDER BY total_fails DESC
   `);
 
-  return { linked, unlinked: unlinked.rows ?? unlinked };
+  const unlinked: ScoreboardUnlinkedRow[] = rowsFromExecute(unlinkedResult).map(
+    (row) => ({
+      dofusPseudo: row.dofus_pseudo,
+      totalFails: Number(row.total_fails),
+    }),
+  );
+
+  return { linked, unlinked };
 }
 
-export async function getFailCountForPseudos(guildId: string, pseudos: string[]) {
+export async function getFailCountForPseudos(
+  guildId: string,
+  pseudos: string[],
+) {
   if (pseudos.length === 0) return [];
 
   const rows = await db
@@ -59,7 +94,10 @@ export async function getFailCountForPseudos(guildId: string, pseudos: string[])
     .where(
       and(
         eq(failedChallenges.guildId, guildId),
-        inArray(sql`lower(${failedChallenges.dofusPseudo})`, pseudos.map((p) => p.toLowerCase())),
+        inArray(
+          sql`lower(${failedChallenges.dofusPseudo})`,
+          pseudos.map((p) => p.toLowerCase()),
+        ),
       ),
     )
     .groupBy(failedChallenges.dofusPseudo);

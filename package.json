@@ -6,6 +6,9 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun run src/index.ts",
+    "test": "bun test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "deploy-commands": "bun run scripts/deploy-commands.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -17,6 +20,7 @@
     "postgres": "^3.4.5"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "drizzle-kit": "^0.30.0",
     "typescript": "^5.8.3"
   }

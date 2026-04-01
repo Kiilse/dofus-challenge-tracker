@@ -1,7 +1,10 @@
 import type { Client, Collection } from 'discord.js';
 import type { Command } from '../types/Command.ts';
 
-export function registerInteractionHandler(client: Client, commands: Collection<string, Command>) {
+export function registerInteractionHandler(
+  client: Client,
+  commands: Collection<string, Command>,
+) {
   client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -12,7 +15,11 @@ export function registerInteractionHandler(client: Client, commands: Collection<
       await command.execute(interaction);
     } catch (err) {
       console.error(`Error executing /${interaction.commandName}:`, err);
-      const msg = { content: 'Une erreur est survenue lors de l\'exécution de cette commande.', ephemeral: true };
+      const msg = {
+        content:
+          "Une erreur est survenue lors de l'exécution de cette commande.",
+        ephemeral: true,
+      };
       if (interaction.deferred || interaction.replied) {
         await interaction.followUp(msg).catch(console.error);
       } else {
