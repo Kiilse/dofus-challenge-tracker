@@ -3,35 +3,47 @@ import type { Command } from '../types/Command.ts';
 import { recordFailure } from '../db/repositories/failedRepository.ts';
 import { findByPseudo } from '../db/repositories/linkRepository.ts';
 
-const FAILED_PATTERN = /^(\S+) a fait échouer le challenge (.+)$/i;
+/** Premier mot = pseudo Dofus ; la fin après « le challenge » = nom du challenge. */
+const FAILED_PATTERN =
+  /^(\S+)\s+a\s+fait\s+échouer\s+le\s+challenge\s+(.+)$/iu;
 
-export const failed: Command = {
+function parseFailedPhrase(raw: string): { pseudo: string; challenge: string } | null {
+  const phrase = raw.trim().normalize('NFC');
+  const match = FAILED_PATTERN.exec(phrase);
+  if (!match) return null;
+  const challenge = match[2].trim();
+  if (!challenge) return null;
+  return { pseudo: match[1], challenge };
+}
+
+export const failed = {
   data: new SlashCommandBuilder()
     .setName('failed')
-    .setDescription('Enregistre un challenge raté')
+    .setDescription('Enregistre un challenge raté à partir d’une phrase figée')
     .addStringOption((opt) =>
       opt
         .setName('phrase')
-        .setDescription('Ex : Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge')
+        .setDescription(
+          'Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge',
+        )
         .setRequired(true),
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
     const guildId = interaction.guildId!;
-    const phrase = interaction.options.getString('phrase', true).trim();
+    const phrase = interaction.options.getString('phrase', true);
 
-    const match = FAILED_PATTERN.exec(phrase);
-    if (!match) {
+    const parsed = parseFailedPhrase(phrase);
+    if (!parsed) {
       await interaction.reply({
         content:
-          'Format invalide. Utilise : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge`',
+          'Format invalide. Utilise exactement : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge` (le pseudo est le premier mot, le challenge est tout ce qui suit « le challenge »).',
         ephemeral: true,
       });
       return;
     }
 
-    const dofusPseudo = match[1];
-    const challenge = match[2].trim();
+    const { pseudo: dofusPseudo, challenge } = parsed;
 
     await recordFailure(guildId, dofusPseudo, challenge, interaction.user.id);
 
@@ -49,4 +61,4 @@ export const failed: Command = {
 
     await interaction.reply({ embeds: [embed] });
   },
-};
+} satisfies Command;

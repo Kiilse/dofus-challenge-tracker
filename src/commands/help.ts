@@ -3,7 +3,7 @@ import type { Command } from '../types/Command.ts';
 
 const LINES = [
   '`/link` — Associe un personnage Dofus à un compte Discord (option admin : cibler un autre utilisateur).',
-  '`/failed` — Enregistre un challenge raté. Format : `Pseudo a fait échouer le challenge NomChallenge`.',
+  '`/failed` — Une phrase : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge` (1er mot = perso, fin = challenge).',
   '`/scoreboard` — Classement des challenges ratés sur le serveur.',
   '`/adventure` — Aventures : `create`, `view`, `list` (tableaux de score parallèles).',
 ] as const;
