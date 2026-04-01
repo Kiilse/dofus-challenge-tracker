@@ -3,27 +3,35 @@ import type { Command } from '../types/Command.ts';
 import { recordFailure } from '../db/repositories/failedRepository.ts';
 import { findByPseudo } from '../db/repositories/linkRepository.ts';
 
+const FAILED_PATTERN = /^(\S+) a fait échouer le challenge (.+)$/i;
+
 export const failed: Command = {
   data: new SlashCommandBuilder()
     .setName('failed')
-    .setDescription('Enregistre un challenge raté par un personnage')
+    .setDescription('Enregistre un challenge raté')
     .addStringOption((opt) =>
       opt
-        .setName('pseudo_dofus')
-        .setDescription('Nom du personnage Dofus')
-        .setRequired(true),
-    )
-    .addStringOption((opt) =>
-      opt
-        .setName('challenge')
-        .setDescription('Nom du challenge raté')
+        .setName('phrase')
+        .setDescription('Ex : Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge')
         .setRequired(true),
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
     const guildId = interaction.guildId!;
-    const dofusPseudo = interaction.options.getString('pseudo_dofus', true).trim();
-    const challenge = interaction.options.getString('challenge', true).trim();
+    const phrase = interaction.options.getString('phrase', true).trim();
+
+    const match = FAILED_PATTERN.exec(phrase);
+    if (!match) {
+      await interaction.reply({
+        content:
+          'Format invalide. Utilise : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge`',
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const dofusPseudo = match[1];
+    const challenge = match[2].trim();
 
     await recordFailure(guildId, dofusPseudo, challenge, interaction.user.id);
 
