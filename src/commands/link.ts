@@ -1,7 +1,6 @@
 import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
-  PermissionFlagsBits,
   SlashCommandBuilder,
 } from 'discord.js';
 import { upsertLink } from '../db/repositories/linkRepository.ts';
@@ -22,7 +21,7 @@ export const link: Command = {
     .addUserOption((opt) =>
       opt
         .setName('discord_user')
-        .setDescription('Compte Discord cible (admin uniquement)')
+        .setDescription('Compte Discord cible (créateur du serveur uniquement)')
         .setRequired(false),
     ),
 
@@ -44,16 +43,12 @@ export const link: Command = {
       .trim();
     const targetUser = interaction.options.getUser('discord_user');
 
-    if (targetUser) {
-      const member = await guild.members.fetch(interaction.user.id);
-      if (!member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-        await interaction.reply({
-          content:
-            "Tu dois avoir la permission **Gérer le serveur** pour lier un perso à quelqu'un d'autre.",
-          ephemeral: true,
-        });
-        return;
-      }
+    if (targetUser && interaction.user.id !== guild.ownerId) {
+      await interaction.reply({
+        content: "Seul le créateur du serveur peut lier un personnage à quelqu'un d'autre.",
+        ephemeral: true,
+      });
+      return;
     }
 
     const discordId = targetUser ? targetUser.id : interaction.user.id;

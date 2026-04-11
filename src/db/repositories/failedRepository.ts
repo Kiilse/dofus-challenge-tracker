@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../client.ts';
 import { failedChallenges, userLinks } from '../schema.ts';
 
@@ -23,6 +23,30 @@ export async function recordFailure(
   await db
     .insert(failedChallenges)
     .values({ guildId, dofusPseudo, challenge, recordedBy });
+}
+
+export async function deleteLastFailure(
+  guildId: string,
+  dofusPseudo: string,
+  challenge: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: failedChallenges.id })
+    .from(failedChallenges)
+    .where(
+      and(
+        eq(failedChallenges.guildId, guildId),
+        sql`lower(${failedChallenges.dofusPseudo}) = lower(${dofusPseudo})`,
+        sql`lower(${failedChallenges.challenge}) = lower(${challenge})`,
+      ),
+    )
+    .orderBy(desc(failedChallenges.recordedAt))
+    .limit(1);
+
+  if (rows.length === 0) return false;
+
+  await db.delete(failedChallenges).where(eq(failedChallenges.id, rows[0]!.id));
+  return true;
 }
 
 function rowsFromExecute<T>(result: { rows?: T[] } | T[]): T[] {
