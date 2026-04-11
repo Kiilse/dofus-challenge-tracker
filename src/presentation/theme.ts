@@ -1,6 +1,7 @@
 export const embedColors = {
   link: 0x4e9af1,
   failed: 0xe74c3c,
+  unfailed: 0x2ecc71,
   scoreboard: 0xf39c12,
   adventureCreate: 0x2ecc71,
   adventureView: 0x9b59b6,
