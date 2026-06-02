@@ -2,6 +2,8 @@ import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../client.ts';
 import { failedChallenges, userLinks } from '../schema.ts';
 
+export type FailedType = 'challenge' | 'succes';
+
 export type ScoreboardLinkedRow = {
   discordId: string;
   totalFails: number;
@@ -19,16 +21,18 @@ export async function recordFailure(
   dofusPseudo: string,
   challenge: string,
   recordedBy: string,
+  type: FailedType,
 ) {
   await db
     .insert(failedChallenges)
-    .values({ guildId, dofusPseudo, challenge, recordedBy });
+    .values({ guildId, dofusPseudo, challenge, recordedBy, type });
 }
 
 export async function deleteLastFailure(
   guildId: string,
   dofusPseudo: string,
   challenge: string,
+  type: FailedType,
 ): Promise<boolean> {
   const rows = await db
     .select({ id: failedChallenges.id })
@@ -36,6 +40,7 @@ export async function deleteLastFailure(
     .where(
       and(
         eq(failedChallenges.guildId, guildId),
+        eq(failedChallenges.type, type),
         sql`lower(${failedChallenges.dofusPseudo}) = lower(${dofusPseudo})`,
         sql`lower(${failedChallenges.challenge}) = lower(${challenge})`,
       ),
@@ -54,10 +59,10 @@ function rowsFromExecute<T>(result: { rows?: T[] } | T[]): T[] {
   return result.rows ?? [];
 }
 
-export async function getScoreboard(guildId: string): Promise<{
-  linked: ScoreboardLinkedRow[];
-  unlinked: ScoreboardUnlinkedRow[];
-}> {
+async function getScoreboardForType(
+  guildId: string,
+  type: FailedType,
+): Promise<{ linked: ScoreboardLinkedRow[]; unlinked: ScoreboardUnlinkedRow[] }> {
   const linkedRaw = await db
     .select({
       discordId: userLinks.discordId,
@@ -68,6 +73,7 @@ export async function getScoreboard(guildId: string): Promise<{
       failedChallenges,
       and(
         eq(failedChallenges.guildId, userLinks.guildId),
+        eq(failedChallenges.type, type),
         sql`lower(${failedChallenges.dofusPseudo}) = lower(${userLinks.dofusPseudo})`,
       ),
     )
@@ -84,6 +90,7 @@ export async function getScoreboard(guildId: string): Promise<{
     SELECT fc.dofus_pseudo, COUNT(fc.id)::int AS total_fails
     FROM failed_challenges fc
     WHERE fc.guild_id = ${guildId}
+      AND fc.type = ${type}
       AND NOT EXISTS (
         SELECT 1 FROM user_links ul
         WHERE ul.guild_id = ${guildId}
@@ -101,6 +108,17 @@ export async function getScoreboard(guildId: string): Promise<{
   );
 
   return { linked, unlinked };
+}
+
+export async function getScoreboard(guildId: string): Promise<{
+  challenges: { linked: ScoreboardLinkedRow[]; unlinked: ScoreboardUnlinkedRow[] };
+  successes: { linked: ScoreboardLinkedRow[]; unlinked: ScoreboardUnlinkedRow[] };
+}> {
+  const [challenges, successes] = await Promise.all([
+    getScoreboardForType(guildId, 'challenge'),
+    getScoreboardForType(guildId, 'succes'),
+  ]);
+  return { challenges, successes };
 }
 
 export async function getFailCountForPseudos(
