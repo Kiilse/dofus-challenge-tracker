@@ -8,17 +8,22 @@ import { deleteLastFailure } from '../db/repositories/failedRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';
 import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';
-import { parseFailedPhrase } from './failed.ts';
 
-export const unfailed: Command = {
+export const unfailedSucces: Command = {
   data: new SlashCommandBuilder()
-    .setName('unfailed')
-    .setDescription('Supprime le dernier challenge raté enregistré pour un personnage')
+    .setName('unfailedsucces')
+    .setDescription('Supprime le dernier succès raté enregistré pour un personnage')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addStringOption((opt) =>
       opt
-        .setName('phrase')
-        .setDescription('Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge')
+        .setName('pseudo')
+        .setDescription('Pseudo Dofus du joueur')
+        .setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName('succes')
+        .setDescription('Nom du succès raté')
         .setRequired(true),
     ),
 
@@ -26,23 +31,14 @@ export const unfailed: Command = {
     const guildId = await requireGuildId(interaction);
     if (guildId === undefined) return;
 
-    const phrase = interaction.options.getString('phrase', true);
-    const parsed = parseFailedPhrase(phrase);
-    if (!parsed) {
-      await interaction.reply({
-        content:
-          'Format invalide. Utilise : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge`',
-        ephemeral: true,
-      });
-      return;
-    }
+    const dofusPseudo = interaction.options.getString('pseudo', true).trim();
+    const succes = interaction.options.getString('succes', true).trim();
 
-    const { pseudo: dofusPseudo, challenge } = parsed;
-    const deleted = await deleteLastFailure(guildId, dofusPseudo, challenge, 'challenge');
+    const deleted = await deleteLastFailure(guildId, dofusPseudo, succes, 'succes');
 
     if (!deleted) {
       await interaction.reply({
-        content: `Aucun échec trouvé pour **${dofusPseudo}** sur le challenge **${challenge}**.`,
+        content: `Aucun échec trouvé pour **${dofusPseudo}** sur le succès **${succes}**.`,
         ephemeral: true,
       });
       return;
@@ -54,7 +50,7 @@ export const unfailed: Command = {
           .setColor(embedColors.unfailed)
           .setTitle('Échec supprimé')
           .setDescription(
-            `Le dernier échec de **${dofusPseudo}** sur le challenge **${challenge}** a été supprimé.`,
+            `Le dernier échec de **${dofusPseudo}** sur le succès **${succes}** a été supprimé.`,
           )
           .setFooter({ text: `Supprimé par ${interaction.user.username}` })
           .setTimestamp(),

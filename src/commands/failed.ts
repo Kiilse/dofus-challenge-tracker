@@ -22,98 +22,49 @@ export function parseFailedPhrase(
   return { pseudo: match[1], challenge };
 }
 
-export const failed = {
+export const failed: Command = {
   data: new SlashCommandBuilder()
     .setName('failed')
-    .setDescription('Enregistre un échec (challenge ou succès)')
-    .addSubcommand((sub) =>
-      sub
-        .setName('challenge')
-        .setDescription('Enregistre un challenge raté')
-        .addStringOption((opt) =>
-          opt
-            .setName('phrase')
-            .setDescription('Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge')
-            .setRequired(true),
-        ),
-    )
-    .addSubcommand((sub) =>
-      sub
-        .setName('succes')
-        .setDescription('Enregistre un succès raté')
-        .addStringOption((opt) =>
-          opt
-            .setName('pseudo')
-            .setDescription('Pseudo Dofus du joueur')
-            .setRequired(true),
-        )
-        .addStringOption((opt) =>
-          opt
-            .setName('succes')
-            .setDescription('Nom du succès raté')
-            .setRequired(true),
-        ),
+    .setDescription('Enregistre un challenge raté')
+    .addStringOption((opt) =>
+      opt
+        .setName('phrase')
+        .setDescription('Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge')
+        .setRequired(true),
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
     const guildId = await requireGuildId(interaction);
     if (guildId === undefined) return;
 
-    const sub = interaction.options.getSubcommand();
-
-    if (sub === 'challenge') {
-      const phrase = interaction.options.getString('phrase', true);
-      const parsed = parseFailedPhrase(phrase);
-      if (!parsed) {
-        await interaction.reply({
-          content:
-            'Format invalide. Utilise : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge`',
-          ephemeral: true,
-        });
-        return;
-      }
-
-      const { pseudo: dofusPseudo, challenge } = parsed;
-      await recordFailure(guildId, dofusPseudo, challenge, interaction.user.id, 'challenge');
-
-      const link = await findByPseudo(guildId, dofusPseudo);
-      const accountMention = link ? ` (<@${link.discordId}>)` : '';
-
+    const phrase = interaction.options.getString('phrase', true);
+    const parsed = parseFailedPhrase(phrase);
+    if (!parsed) {
       await interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(embedColors.failed)
-            .setTitle('Challenge raté !')
-            .setDescription(
-              `**${dofusPseudo}**${accountMention} a fait échouer le challenge **${challenge}** !`,
-            )
-            .setFooter({ text: `Enregistré par ${interaction.user.username}` })
-            .setTimestamp(),
-        ],
+        content:
+          'Format invalide. Utilise : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge`',
+        ephemeral: true,
       });
       return;
     }
 
-    if (sub === 'succes') {
-      const dofusPseudo = interaction.options.getString('pseudo', true).trim();
-      const succes = interaction.options.getString('succes', true).trim();
-      await recordFailure(guildId, dofusPseudo, succes, interaction.user.id, 'succes');
+    const { pseudo: dofusPseudo, challenge } = parsed;
+    await recordFailure(guildId, dofusPseudo, challenge, interaction.user.id, 'challenge');
 
-      const link = await findByPseudo(guildId, dofusPseudo);
-      const accountMention = link ? ` (<@${link.discordId}>)` : '';
+    const link = await findByPseudo(guildId, dofusPseudo);
+    const accountMention = link ? ` (<@${link.discordId}>)` : '';
 
-      await interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(embedColors.failedSucces)
-            .setTitle('Succès raté !')
-            .setDescription(
-              `**${dofusPseudo}**${accountMention} a raté le succès **${succes}** !`,
-            )
-            .setFooter({ text: `Enregistré par ${interaction.user.username}` })
-            .setTimestamp(),
-        ],
-      });
-    }
+    await interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(embedColors.failed)
+          .setTitle('Challenge raté !')
+          .setDescription(
+            `**${dofusPseudo}**${accountMention} a fait échouer le challenge **${challenge}** !`,
+          )
+          .setFooter({ text: `Enregistré par ${interaction.user.username}` })
+          .setTimestamp(),
+      ],
+    });
   },
-} satisfies Command;
+};
