@@ -37,6 +37,32 @@ function buildUnlinkedLines(rows: ScoreboardUnlinkedRow[]): string[] {
   );
 }
 
+async function buildScoreboardEmbed(
+  guild: Guild,
+  linked: ScoreboardLinkedRow[],
+  unlinked: ScoreboardUnlinkedRow[],
+  title: string,
+  color: number,
+): Promise<EmbedBuilder> {
+  const embed = new EmbedBuilder().setColor(color).setTitle(title).setTimestamp();
+
+  if (linked.length === 0 && unlinked.length === 0) {
+    embed.setDescription('Aucun échec enregistré.');
+    return embed;
+  }
+
+  if (linked.length > 0) {
+    const lines = await buildLinkedLines(guild, linked);
+    embed.addFields({ name: 'Comptes liés', value: lines.join('\n') });
+  }
+  if (unlinked.length > 0) {
+    const lines = buildUnlinkedLines(unlinked);
+    embed.addFields({ name: 'Non liés', value: lines.join('\n') });
+  }
+
+  return embed;
+}
+
 export const scoreboard: Command = {
   data: new SlashCommandBuilder()
     .setName('scoreboard')
@@ -61,49 +87,23 @@ export const scoreboard: Command = {
 
     const { challenges, successes } = await getScoreboard(guildId);
 
-    const hasAnyData =
-      challenges.linked.length > 0 ||
-      challenges.unlinked.length > 0 ||
-      successes.linked.length > 0 ||
-      successes.unlinked.length > 0;
+    const [challengesEmbed, succesEmbed] = await Promise.all([
+      buildScoreboardEmbed(
+        guild,
+        challenges.linked,
+        challenges.unlinked,
+        '⚔️ Classement — Challenges ratés',
+        embedColors.failed,
+      ),
+      buildScoreboardEmbed(
+        guild,
+        successes.linked,
+        successes.unlinked,
+        '💀 Classement — Succès ratés',
+        embedColors.failedSucces,
+      ),
+    ]);
 
-    const embed = new EmbedBuilder()
-      .setColor(embedColors.scoreboard)
-      .setTitle('🏆 Classement des échecs')
-      .setTimestamp();
-
-    if (!hasAnyData) {
-      embed.setDescription('Aucun échec enregistré pour ce serveur.');
-      await interaction.editReply({ embeds: [embed] });
-      return;
-    }
-
-    // ── Challenges ──────────────────────────────────────────────────────────
-    if (challenges.linked.length > 0) {
-      const lines = await buildLinkedLines(guild, challenges.linked);
-      embed.addFields({ name: '⚔️ Challenges ratés', value: lines.join('\n') });
-    }
-    if (challenges.unlinked.length > 0) {
-      const lines = buildUnlinkedLines(challenges.unlinked);
-      embed.addFields({
-        name: '⚔️ Challenges ratés (non liés)',
-        value: lines.join('\n'),
-      });
-    }
-
-    // ── Succès ───────────────────────────────────────────────────────────────
-    if (successes.linked.length > 0) {
-      const lines = await buildLinkedLines(guild, successes.linked);
-      embed.addFields({ name: '💀 Succès ratés', value: lines.join('\n') });
-    }
-    if (successes.unlinked.length > 0) {
-      const lines = buildUnlinkedLines(successes.unlinked);
-      embed.addFields({
-        name: '💀 Succès ratés (non liés)',
-        value: lines.join('\n'),
-      });
-    }
-
-    await interaction.editReply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [challengesEmbed, succesEmbed] });
   },
 };
