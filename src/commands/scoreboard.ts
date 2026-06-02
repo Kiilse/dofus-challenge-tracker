@@ -3,7 +3,12 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
 } from 'discord.js';
-import { getScoreboard } from '../db/repositories/failedRepository.ts';
+import type { Guild } from 'discord.js';
+import {
+  type ScoreboardLinkedRow,
+  type ScoreboardUnlinkedRow,
+  getScoreboard,
+} from '../db/repositories/failedRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';
 import {
   formatFailCount,
@@ -13,11 +18,30 @@ import {
 import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';
 
+async function buildLinkedLines(
+  guild: Guild,
+  rows: ScoreboardLinkedRow[],
+): Promise<string[]> {
+  return Promise.all(
+    rows.map(async (row, i) => {
+      const medal = rankingMedalForIndex(i);
+      const displayName = await resolveMemberDisplayName(guild, row.discordId);
+      return `${medal} **${displayName}** — ${formatFailCount(row.totalFails)}`;
+    }),
+  );
+}
+
+function buildUnlinkedLines(rows: ScoreboardUnlinkedRow[]): string[] {
+  return rows.map(
+    (row) => `• **${row.dofusPseudo}** — ${formatFailCount(row.totalFails)}`,
+  );
+}
+
 export const scoreboard: Command = {
   data: new SlashCommandBuilder()
     .setName('scoreboard')
     .setDescription(
-      'Affiche le classement des challenges ratés sur ce serveur',
+      'Affiche le classement des challenges et succès ratés sur ce serveur',
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -35,40 +59,47 @@ export const scoreboard: Command = {
 
     await interaction.deferReply();
 
-    const { linked, unlinked } = await getScoreboard(guildId);
+    const { challenges, successes } = await getScoreboard(guildId);
+
+    const hasAnyData =
+      challenges.linked.length > 0 ||
+      challenges.unlinked.length > 0 ||
+      successes.linked.length > 0 ||
+      successes.unlinked.length > 0;
 
     const embed = new EmbedBuilder()
       .setColor(embedColors.scoreboard)
-      .setTitle('🏆 Classement des challenges ratés')
+      .setTitle('🏆 Classement des échecs')
       .setTimestamp();
 
-    if (linked.length === 0 && unlinked.length === 0) {
-      embed.setDescription('Aucun challenge raté enregistré pour ce serveur.');
+    if (!hasAnyData) {
+      embed.setDescription('Aucun échec enregistré pour ce serveur.');
       await interaction.editReply({ embeds: [embed] });
       return;
     }
 
-    if (linked.length > 0) {
-      const lines = await Promise.all(
-        linked.map(async (row, i) => {
-          const medal = rankingMedalForIndex(i);
-          const displayName = await resolveMemberDisplayName(
-            guild,
-            row.discordId,
-          );
-          return `${medal} **${displayName}** — ${formatFailCount(row.totalFails)}`;
-        }),
-      );
-      embed.addFields({ name: 'Comptes Discord', value: lines.join('\n') });
+    // ── Challenges ──────────────────────────────────────────────────────────
+    if (challenges.linked.length > 0) {
+      const lines = await buildLinkedLines(guild, challenges.linked);
+      embed.addFields({ name: '⚔️ Challenges ratés', value: lines.join('\n') });
+    }
+    if (challenges.unlinked.length > 0) {
+      const lines = buildUnlinkedLines(challenges.unlinked);
+      embed.addFields({
+        name: '⚔️ Challenges ratés (non liés)',
+        value: lines.join('\n'),
+      });
     }
 
-    if (unlinked.length > 0) {
-      const lines = unlinked.map(
-        (row) =>
-          `• **${row.dofusPseudo}** — ${formatFailCount(row.totalFails)}`,
-      );
+    // ── Succès ───────────────────────────────────────────────────────────────
+    if (successes.linked.length > 0) {
+      const lines = await buildLinkedLines(guild, successes.linked);
+      embed.addFields({ name: '💀 Succès ratés', value: lines.join('\n') });
+    }
+    if (successes.unlinked.length > 0) {
+      const lines = buildUnlinkedLines(successes.unlinked);
       embed.addFields({
-        name: 'Personnages non liés',
+        name: '💀 Succès ratés (non liés)',
         value: lines.join('\n'),
       });
     }
