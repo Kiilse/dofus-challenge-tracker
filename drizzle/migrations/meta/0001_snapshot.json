@@ -1,0 +1,123 @@
+{
+  "id": "c9d1e2f3-a4b5-6789-cdef-012345678901",
+  "prevId": "b4f19671-041c-4e86-91db-c0c4493efce3",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.adventure_members": {
+      "name": "adventure_members",
+      "schema": "",
+      "columns": {
+        "adventure_id": {
+          "name": "adventure_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dofus_pseudo": {
+          "name": "dofus_pseudo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "adventure_members_adventure_id_adventures_id_fk": {
+          "name": "adventure_members_adventure_id_adventures_id_fk",
+          "tableFrom": "adventure_members",
+          "tableTo": "adventures",
+          "columnsFrom": ["adventure_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "adventure_members_adventure_id_dofus_pseudo_pk": {
+          "name": "adventure_members_adventure_id_dofus_pseudo_pk",
+          "columns": ["adventure_id", "dofus_pseudo"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.adventures": {
+      "name": "adventures",
+      "schema": "",
+      "columns": {
+        "id": { "name": "id", "type": "serial", "primaryKey": true, "notNull": true },
+        "guild_id": { "name": "guild_id", "type": "text", "primaryKey": false, "notNull": true },
+        "name": { "name": "name", "type": "text", "primaryKey": false, "notNull": true },
+        "created_by": { "name": "created_by", "type": "text", "primaryKey": false, "notNull": true },
+        "created_at": { "name": "created_at", "type": "timestamp", "primaryKey": false, "notNull": true, "default": "now()" }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uniq_guild_adventure_name": {
+          "name": "uniq_guild_adventure_name",
+          "nullsNotDistinct": false,
+          "columns": ["guild_id", "name"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.failed_challenges": {
+      "name": "failed_challenges",
+      "schema": "",
+      "columns": {
+        "id": { "name": "id", "type": "serial", "primaryKey": true, "notNull": true },
+        "guild_id": { "name": "guild_id", "type": "text", "primaryKey": false, "notNull": true },
+        "dofus_pseudo": { "name": "dofus_pseudo", "type": "text", "primaryKey": false, "notNull": true },
+        "challenge": { "name": "challenge", "type": "text", "primaryKey": false, "notNull": true },
+        "type": { "name": "type", "type": "text", "primaryKey": false, "notNull": true, "default": "'challenge'" },
+        "recorded_at": { "name": "recorded_at", "type": "timestamp", "primaryKey": false, "notNull": true, "default": "now()" },
+        "recorded_by": { "name": "recorded_by", "type": "text", "primaryKey": false, "notNull": true }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_links": {
+      "name": "user_links",
+      "schema": "",
+      "columns": {
+        "id": { "name": "id", "type": "serial", "primaryKey": true, "notNull": true },
+        "guild_id": { "name": "guild_id", "type": "text", "primaryKey": false, "notNull": true },
+        "discord_id": { "name": "discord_id", "type": "text", "primaryKey": false, "notNull": true },
+        "dofus_pseudo": { "name": "dofus_pseudo", "type": "text", "primaryKey": false, "notNull": true },
+        "linked_at": { "name": "linked_at", "type": "timestamp", "primaryKey": false, "notNull": true, "default": "now()" }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uniq_guild_pseudo": {
+          "name": "uniq_guild_pseudo",
+          "nullsNotDistinct": false,
+          "columns": ["guild_id", "dofus_pseudo"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": { "columns": {}, "schemas": {}, "tables": {} }
+}
