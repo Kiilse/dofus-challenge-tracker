@@ -13,7 +13,7 @@ await db.execute(sql`
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once('ready', (c) => {
+client.once('clientReady', (c) => {
   console.log(`✓ Bot connecté en tant que ${c.user.tag}`);
 });
 
