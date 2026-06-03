@@ -12,10 +12,10 @@ import {
 import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';
 
-export const scoreboard: Command = {
+export const scoreboardSucces: Command = {
   data: new SlashCommandBuilder()
-    .setName('scoreboard')
-    .setDescription('Affiche le classement des challenges ratés sur ce serveur'),
+    .setName('scoreboardsucces')
+    .setDescription('Affiche le classement des succès ratés sur ce serveur'),
 
   async execute(interaction: ChatInputCommandInteraction) {
     const guildId = await requireGuildId(interaction);
@@ -30,11 +30,11 @@ export const scoreboard: Command = {
     await interaction.deferReply();
 
     const showPage = async (page: number) => {
-      const { rows, total } = await getScoreboardPage(guildId, 'challenge', page, PAGE_SIZE);
+      const { rows, total } = await getScoreboardPage(guildId, 'succes', page, PAGE_SIZE);
       const embed = await buildScoreboardEmbed(
         guild, rows, page, total,
-        '⚔️ Classement — Challenges ratés',
-        embedColors.failed,
+        '💀 Classement — Succès ratés',
+        embedColors.failedSucces,
       );
       const paginationRow = buildPaginationRow(page, total);
       return { embed, components: paginationRow ? [paginationRow] : [] };
