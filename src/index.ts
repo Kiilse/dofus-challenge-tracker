@@ -17,14 +17,16 @@ const body = [...commands.values()].map((cmd) => cmd.data.toJSON());
 
 console.log(`→ Registering ${body.length} slash commands...`);
 try {
+  // Always clear global commands first
+  await rest.put(Routes.applicationCommands(config.clientId), { body: config.guildIds.length > 0 ? [] : body });
+
   if (config.guildIds.length > 0) {
-    await rest.put(Routes.applicationCommands(config.clientId), { body: [] });
+    console.log('✓ Global commands cleared');
     for (const guildId of config.guildIds) {
       await rest.put(Routes.applicationGuildCommands(config.clientId, guildId), { body });
       console.log(`✓ Commands registered to guild ${guildId}`);
     }
   } else {
-    await rest.put(Routes.applicationCommands(config.clientId), { body });
     console.log(`✓ ${body.length} global commands registered`);
   }
 } catch (err) {
