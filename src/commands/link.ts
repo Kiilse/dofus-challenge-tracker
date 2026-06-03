@@ -33,7 +33,7 @@ export const link: Command = {
     if (!guild) {
       await interaction.reply({
         content: 'Serveur introuvable.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -46,7 +46,7 @@ export const link: Command = {
     if (targetUser && interaction.user.id !== guild.ownerId) {
       await interaction.reply({
         content: "Seul le créateur du serveur peut lier un personnage à quelqu'un d'autre.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -61,6 +61,6 @@ export const link: Command = {
         `Le personnage **${dofusPseudo}** est maintenant lié à <@${discordId}>.`,
       );
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   },
 };

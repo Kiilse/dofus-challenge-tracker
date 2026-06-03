@@ -4,5 +4,5 @@ builder = "DOCKERFILE"
 
 [deploy]
 startCommand = "bun run start"
-preDeployCommand = "bun run db:migrate && bun run deploy-commands"
+preDeployCommand = "bun run predeploy"
 restartPolicyType = "ON_FAILURE"

@@ -23,7 +23,7 @@ export const scoreboard: Command = {
 
     const guild = interaction.guild;
     if (!guild) {
-      await interaction.reply({ content: 'Serveur introuvable.', ephemeral: true });
+      await interaction.reply({ content: 'Serveur introuvable.', flags: MessageFlags.Ephemeral });
       return;
     }
 

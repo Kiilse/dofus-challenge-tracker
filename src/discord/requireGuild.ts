@@ -1,4 +1,4 @@
-import type { ChatInputCommandInteraction } from 'discord.js';
+import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js';
 
 export async function requireGuildId(
   interaction: ChatInputCommandInteraction,
@@ -8,7 +8,7 @@ export async function requireGuildId(
 
   await interaction.reply({
     content: 'Cette commande ne peut être utilisée que sur un serveur.',
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
   return undefined;
 }
