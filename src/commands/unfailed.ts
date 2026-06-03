@@ -3,6 +3,7 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
+  MessageFlags,
 } from 'discord.js';
 import { deleteLastFailure } from '../db/repositories/failedRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';

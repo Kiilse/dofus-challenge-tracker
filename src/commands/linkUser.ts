@@ -3,6 +3,7 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
+  MessageFlags,
 } from 'discord.js';
 import { upsertLink } from '../db/repositories/linkRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';

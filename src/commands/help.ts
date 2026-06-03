@@ -2,6 +2,7 @@ import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
   SlashCommandBuilder,
+  MessageFlags,
 } from 'discord.js';
 import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';

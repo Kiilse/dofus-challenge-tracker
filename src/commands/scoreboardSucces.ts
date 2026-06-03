@@ -1,6 +1,7 @@
 import {
   type ChatInputCommandInteraction,
   SlashCommandBuilder,
+  MessageFlags,
 } from 'discord.js';
 import { getScoreboardPage } from '../db/repositories/failedRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';
