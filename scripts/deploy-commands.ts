@@ -9,17 +9,23 @@ const body = [...commands.values()].map((cmd) => cmd.data.toJSON());
 console.log(`→ deploy-commands: ${body.length} commands to register`);
 
 try {
-  // Global registration — covers all servers (propagates within ~1 hour)
-  await rest.put(Routes.applicationCommands(config.clientId), { body });
-  console.log(`✓ Registered ${body.length} global commands`);
+  if (config.guildIds.length > 0) {
+    // Clear global commands to avoid duplicates with guild-specific ones
+    await rest.put(Routes.applicationCommands(config.clientId), { body: [] });
+    console.log('✓ Cleared global commands');
 
-  // Per-guild registration — instant update for listed servers
-  for (const guildId of config.guildIds) {
-    await rest.put(
-      Routes.applicationGuildCommands(config.clientId, guildId),
-      { body },
-    );
-    console.log(`✓ Registered ${body.length} commands to guild ${guildId}`);
+    // Per-guild registration — instant update for listed servers
+    for (const guildId of config.guildIds) {
+      await rest.put(
+        Routes.applicationGuildCommands(config.clientId, guildId),
+        { body },
+      );
+      console.log(`✓ Registered ${body.length} commands to guild ${guildId}`);
+    }
+  } else {
+    // Global registration — covers all servers (propagates within ~1 hour)
+    await rest.put(Routes.applicationCommands(config.clientId), { body });
+    console.log(`✓ Registered ${body.length} global commands`);
   }
 
   console.log('✓ deploy-commands: done');
