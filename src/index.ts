@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
 import { sql } from 'drizzle-orm';
 import { commands } from './commands/index.ts';
 import { config } from './config.ts';
@@ -10,6 +10,26 @@ await db.execute(sql`
   ALTER TABLE failed_challenges
   ADD COLUMN IF NOT EXISTS "type" text NOT NULL DEFAULT 'challenge'
 `);
+
+// Register slash commands with Discord
+const rest = new REST({ version: '10' }).setToken(config.discordToken);
+const body = [...commands.values()].map((cmd) => cmd.data.toJSON());
+
+console.log(`→ Registering ${body.length} slash commands...`);
+try {
+  if (config.guildIds.length > 0) {
+    await rest.put(Routes.applicationCommands(config.clientId), { body: [] });
+    for (const guildId of config.guildIds) {
+      await rest.put(Routes.applicationGuildCommands(config.clientId, guildId), { body });
+      console.log(`✓ Commands registered to guild ${guildId}`);
+    }
+  } else {
+    await rest.put(Routes.applicationCommands(config.clientId), { body });
+    console.log(`✓ ${body.length} global commands registered`);
+  }
+} catch (err) {
+  console.error('✗ Failed to register commands:', err);
+}
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
