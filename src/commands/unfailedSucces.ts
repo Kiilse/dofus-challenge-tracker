@@ -39,7 +39,7 @@ export const unfailedSucces: Command = {
     if (!deleted) {
       await interaction.reply({
         content: `Aucun échec trouvé pour **${dofusPseudo}** sur le succès **${succes}**.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -55,7 +55,7 @@ export const unfailedSucces: Command = {
           .setFooter({ text: `Supprimé par ${interaction.user.username}` })
           .setTimestamp(),
       ],
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

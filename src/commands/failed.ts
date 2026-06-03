@@ -43,7 +43,7 @@ export const failed: Command = {
       await interaction.reply({
         content:
           'Format invalide. Utilise : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge`',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }

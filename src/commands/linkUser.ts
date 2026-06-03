@@ -33,14 +33,14 @@ export const linkUser: Command = {
 
     const guild = interaction.guild;
     if (!guild) {
-      await interaction.reply({ content: 'Serveur introuvable.', ephemeral: true });
+      await interaction.reply({ content: 'Serveur introuvable.', flags: MessageFlags.Ephemeral });
       return;
     }
 
     if (interaction.user.id !== guild.ownerId) {
       await interaction.reply({
         content: "Seul le créateur du serveur peut utiliser cette commande.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -51,7 +51,7 @@ export const linkUser: Command = {
     if (!/^\d{17,20}$/.test(discordId)) {
       await interaction.reply({
         content: 'ID Discord invalide. Active le Mode Développeur dans Discord (Paramètres → Avancés), puis clic droit sur un utilisateur → "Copier l\'identifiant".',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -65,7 +65,7 @@ export const linkUser: Command = {
           .setTitle('Liaison enregistrée')
           .setDescription(`Le personnage **${dofusPseudo}** est maintenant lié à <@${discordId}>.`),
       ],
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

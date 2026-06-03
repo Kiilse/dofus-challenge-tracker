@@ -32,7 +32,7 @@ export const unfailed: Command = {
       await interaction.reply({
         content:
           'Format invalide. Utilise : `Pseudo-Dofus a fait échouer le challenge Nom-Du-Challenge`',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -43,7 +43,7 @@ export const unfailed: Command = {
     if (!deleted) {
       await interaction.reply({
         content: `Aucun échec trouvé pour **${dofusPseudo}** sur le challenge **${challenge}**.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -59,7 +59,7 @@ export const unfailed: Command = {
           .setFooter({ text: `Supprimé par ${interaction.user.username}` })
           .setTimestamp(),
       ],
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };
