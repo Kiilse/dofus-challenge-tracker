@@ -1,7 +1,6 @@
 import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
-  PermissionFlagsBits,
   SlashCommandBuilder,
   MessageFlags,
 } from 'discord.js';
@@ -15,7 +14,6 @@ export const unfailed: Command = {
   data: new SlashCommandBuilder()
     .setName('unfailed')
     .setDescription('Supprime le dernier challenge raté enregistré pour un personnage')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addStringOption((opt) =>
       opt
         .setName('phrase')

@@ -1,7 +1,6 @@
 import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
-  PermissionFlagsBits,
   SlashCommandBuilder,
   MessageFlags,
 } from 'discord.js';
@@ -14,7 +13,6 @@ export const unfailedSucces: Command = {
   data: new SlashCommandBuilder()
     .setName('unfailedsucces')
     .setDescription('Supprime le dernier succès raté enregistré pour un personnage')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addStringOption((opt) =>
       opt
         .setName('pseudo')
