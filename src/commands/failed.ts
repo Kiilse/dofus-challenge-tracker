@@ -2,6 +2,7 @@ import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
   SlashCommandBuilder,
+  MessageFlags,
 } from 'discord.js';
 import { recordFailure } from '../db/repositories/failedRepository.ts';
 import { findByPseudo } from '../db/repositories/linkRepository.ts';

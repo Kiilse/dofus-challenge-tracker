@@ -54,15 +54,3 @@ export async function findLinksForPseudos(
   return map;
 }
 
-export async function findByDiscordId(guildId: string, discordId: string) {
-  return db
-    .select()
-    .from(userLinks)
-    .where(
-      and(eq(userLinks.guildId, guildId), eq(userLinks.discordId, discordId)),
-    );
-}
-
-export async function getAllLinks(guildId: string) {
-  return db.select().from(userLinks).where(eq(userLinks.guildId, guildId));
-}

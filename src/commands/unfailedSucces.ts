@@ -1,8 +1,8 @@
 import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
-  PermissionFlagsBits,
   SlashCommandBuilder,
+  MessageFlags,
 } from 'discord.js';
 import { deleteLastFailure } from '../db/repositories/failedRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';
@@ -13,7 +13,6 @@ export const unfailedSucces: Command = {
   data: new SlashCommandBuilder()
     .setName('unfailedsucces')
     .setDescription('Supprime le dernier succès raté enregistré pour un personnage')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addStringOption((opt) =>
       opt
         .setName('pseudo')
