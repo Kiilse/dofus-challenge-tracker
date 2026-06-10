@@ -79,23 +79,23 @@ export async function getScoreboardPage(
   const [pageResult, countResult] = await Promise.all([
     db.execute<ScoreboardPageSqlRow>(sql`
       SELECT
-        COALESCE(ul.discord_id, fc.dofus_pseudo) AS group_key,
+        ul.discord_id AS group_key,
         ul.discord_id,
         MIN(fc.dofus_pseudo) AS dofus_pseudo,
         COUNT(fc.id)::int AS total_fails
       FROM failed_challenges fc
-      LEFT JOIN user_links ul
+      INNER JOIN user_links ul
         ON ul.guild_id = fc.guild_id
         AND lower(ul.dofus_pseudo) = lower(fc.dofus_pseudo)
       WHERE fc.guild_id = ${guildId} AND fc.type = ${type}
-      GROUP BY COALESCE(ul.discord_id, fc.dofus_pseudo), ul.discord_id
+      GROUP BY ul.discord_id
       ORDER BY total_fails DESC
       LIMIT ${pageSize} OFFSET ${offset}
     `),
     db.execute<CountSqlRow>(sql`
-      SELECT COUNT(DISTINCT COALESCE(ul.discord_id, lower(fc.dofus_pseudo)))::int AS total
+      SELECT COUNT(DISTINCT ul.discord_id)::int AS total
       FROM failed_challenges fc
-      LEFT JOIN user_links ul
+      INNER JOIN user_links ul
         ON ul.guild_id = fc.guild_id
         AND lower(ul.dofus_pseudo) = lower(fc.dofus_pseudo)
       WHERE fc.guild_id = ${guildId} AND fc.type = ${type}

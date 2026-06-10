@@ -52,7 +52,8 @@ export async function buildScoreboardEmbed(
   embed.setDescription(lines.join('\n'));
 
   if (totalPages > 1) {
-    embed.setFooter({ text: `Page ${page + 1} / ${totalPages} · ${total} personnages` });
+    const unit = byCharacter ? 'personnages' : 'joueurs';
+    embed.setFooter({ text: `Page ${page + 1} / ${totalPages} · ${total} ${unit}` });
   }
 
   return embed;
