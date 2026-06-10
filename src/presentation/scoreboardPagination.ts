@@ -22,6 +22,7 @@ export async function buildScoreboardEmbed(
   total: number,
   title: string,
   color: number,
+  byCharacter = false,
 ): Promise<EmbedBuilder> {
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const offset = page * PAGE_SIZE;
@@ -36,6 +37,10 @@ export async function buildScoreboardEmbed(
   const lines = await Promise.all(
     rows.map(async (row, i) => {
       const medal = rankingMedalForIndex(offset + i);
+      if (byCharacter) {
+        const mention = row.discordId ? ` (<@${row.discordId}>)` : ' *(non lié)*';
+        return `${medal} **${row.dofusPseudo}**${mention} — ${formatFailCount(row.totalFails)}`;
+      }
       const name = row.discordId
         ? await resolveMemberDisplayName(guild, row.discordId)
         : row.dofusPseudo;
@@ -47,7 +52,7 @@ export async function buildScoreboardEmbed(
   embed.setDescription(lines.join('\n'));
 
   if (totalPages > 1) {
-    embed.setFooter({ text: `Page ${page + 1} / ${totalPages} · ${total} joueurs` });
+    embed.setFooter({ text: `Page ${page + 1} / ${totalPages} · ${total} personnages` });
   }
 
   return embed;

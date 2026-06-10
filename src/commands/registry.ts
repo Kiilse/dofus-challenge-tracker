@@ -5,7 +5,9 @@ import { failedSucces } from './failedSucces.ts';
 import { link } from './link.ts';
 import { linkUser } from './linkUser.ts';
 import { scoreboard } from './scoreboard.ts';
+import { scoreboardPerso } from './scoreboardPerso.ts';
 import { scoreboardSucces } from './scoreboardSucces.ts';
+import { scoreboardSuccesPerso } from './scoreboardSuccesPerso.ts';
 import { unfailed } from './unfailed.ts';
 import { unfailedSucces } from './unfailedSucces.ts';
 
@@ -17,6 +19,8 @@ export const commandsForHelp: Command[] = [
   failedSucces,
   unfailedSucces,
   scoreboard,
+  scoreboardPerso,
   scoreboardSucces,
+  scoreboardSuccesPerso,
   adventure,
 ];
