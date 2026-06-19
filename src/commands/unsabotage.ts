@@ -22,7 +22,7 @@ export const unsabotage: Command = {
     .addStringOption((opt) =>
       opt
         .setName('cible')
-        .setDescription('Ce qui avait été saboté')
+        .setDescription('Description exacte du sabotage à supprimer')
         .setRequired(true),
     ),
 

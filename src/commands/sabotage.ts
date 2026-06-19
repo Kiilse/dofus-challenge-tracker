@@ -22,7 +22,7 @@ export const sabotage: Command = {
     .addStringOption((opt) =>
       opt
         .setName('cible')
-        .setDescription('Ce qui a été saboté (item, quête, donjon…)')
+        .setDescription('Description du sabotage (ex: Miss click sur combat Plongée dans un bain de sang)')
         .setRequired(true),
     ),
 
