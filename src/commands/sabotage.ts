@@ -21,8 +21,8 @@ export const sabotage: Command = {
     )
     .addStringOption((opt) =>
       opt
-        .setName('cible')
-        .setDescription('Description du sabotage (ex: Miss click sur combat Plongée dans un bain de sang)')
+        .setName('intitule')
+        .setDescription('Intitulé du sabotage (ex: Miss click sur combat Plongée dans un bain de sang)')
         .setRequired(true),
     ),
 
@@ -31,9 +31,9 @@ export const sabotage: Command = {
     if (guildId === undefined) return;
 
     const dofusPseudo = interaction.options.getString('pseudo', true).trim();
-    const cible = interaction.options.getString('cible', true).trim();
+    const intitule = interaction.options.getString('intitule', true).trim();
 
-    await recordFailure(guildId, dofusPseudo, cible, interaction.user.id, 'sabotage');
+    await recordFailure(guildId, dofusPseudo, intitule, interaction.user.id, 'sabotage');
 
     const link = await findByPseudo(guildId, dofusPseudo);
     const accountMention = link ? ` (<@${link.discordId}>)` : '';
@@ -44,7 +44,7 @@ export const sabotage: Command = {
           .setColor(embedColors.sabotage)
           .setTitle('Sabotage enregistré ! 🗡️')
           .setDescription(
-            `**${dofusPseudo}**${accountMention} a saboté : **${cible}** !`,
+            `**${dofusPseudo}**${accountMention} a saboté : **${intitule}** !`,
           )
           .setFooter({ text: `Enregistré par ${interaction.user.username}` })
           .setTimestamp(),

@@ -151,6 +151,28 @@ export async function getScoreboardPageByCharacter(
   return { rows, total };
 }
 
+export async function getSabotageTargetsForPseudo(
+  guildId: string,
+  dofusPseudo: string,
+): Promise<{ cible: string; count: number }[]> {
+  type Row = { intitule: string; total: number };
+
+  const result = await db.execute<Row>(sql`
+    SELECT challenge AS intitule, COUNT(id)::int AS total
+    FROM failed_challenges
+    WHERE guild_id = ${guildId}
+      AND type = 'sabotage'
+      AND lower(dofus_pseudo) = lower(${dofusPseudo})
+    GROUP BY challenge
+    ORDER BY total DESC, challenge ASC
+  `);
+
+  return rowsFromExecute(result).map((row) => ({
+    intitule: row.intitule,
+    count: Number(row.total),
+  }));
+}
+
 export async function getFailCountForPseudos(
   guildId: string,
   pseudos: string[],

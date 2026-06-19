@@ -1,10 +1,13 @@
 import type { Command } from '../types/Command.ts';
 import { adventure } from './adventure.ts';
+import { newMember } from './newMember.ts';
+import { setMemberDate } from './setMemberDate.ts';
 import { failed } from './failed.ts';
 import { failedSucces } from './failedSucces.ts';
 import { link } from './link.ts';
 import { linkUser } from './linkUser.ts';
 import { sabotage } from './sabotage.ts';
+import { sabotagePerso } from './sabotagePerso.ts';
 import { scoreboard } from './scoreboard.ts';
 import { scoreboardPerso } from './scoreboardPerso.ts';
 import { scoreboardSabotage } from './scoreboardSabotage.ts';
@@ -22,11 +25,14 @@ export const commandsForHelp: Command[] = [
   failedSucces,
   unfailedSucces,
   sabotage,
+  sabotagePerso,
   unsabotage,
   scoreboard,
   scoreboardPerso,
   scoreboardSucces,
   scoreboardSuccesPerso,
   scoreboardSabotage,
+  newMember,
+  setMemberDate,
   adventure,
 ];

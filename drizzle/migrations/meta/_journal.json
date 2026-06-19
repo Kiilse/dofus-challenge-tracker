@@ -16,5 +16,12 @@
       "tag": "0001_add_failed_type",
       "breakpoints": true
     }
+    ,{
+      "idx": 2,
+      "version": "7",
+      "when": 1750300000000,
+      "tag": "0002_add_guild_members",
+      "breakpoints": true
+    }
   ]
 }
