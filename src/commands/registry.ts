@@ -1,5 +1,7 @@
 import type { Command } from '../types/Command.ts';
 import { adventure } from './adventure.ts';
+import { newMember } from './newMember.ts';
+import { setMemberDate } from './setMemberDate.ts';
 import { failed } from './failed.ts';
 import { failedSucces } from './failedSucces.ts';
 import { link } from './link.ts';
@@ -30,5 +32,7 @@ export const commandsForHelp: Command[] = [
   scoreboardSucces,
   scoreboardSuccesPerso,
   scoreboardSabotage,
+  newMember,
+  setMemberDate,
   adventure,
 ];

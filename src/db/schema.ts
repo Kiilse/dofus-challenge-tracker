@@ -42,6 +42,19 @@ export const adventures = pgTable(
   (t) => [unique('uniq_guild_adventure_name').on(t.guildId, t.name)],
 );
 
+export const guildMembers = pgTable(
+  'guild_members',
+  {
+    id: serial('id').primaryKey(),
+    guildId: text('guild_id').notNull(),
+    dofusPseudo: text('dofus_pseudo').notNull(),
+    joinedAt: timestamp('joined_at').notNull(),
+    recordedBy: text('recorded_by').notNull(),
+    recordedAt: timestamp('recorded_at').defaultNow().notNull(),
+  },
+  (t) => [unique('uniq_guild_member_pseudo').on(t.guildId, t.dofusPseudo)],
+);
+
 export const adventureMembers = pgTable(
   'adventure_members',
   {
