@@ -21,6 +21,18 @@ await db.execute(sql`
   )
 `);
 await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS "guild_members" (
+    "id" serial PRIMARY KEY NOT NULL,
+    "guild_id" text NOT NULL,
+    "dofus_pseudo" text NOT NULL,
+    "joined_at" timestamp NOT NULL,
+    "recorded_by" text NOT NULL,
+    "recorded_at" timestamp DEFAULT now() NOT NULL,
+    "anniversary_announced_at" timestamp,
+    CONSTRAINT "uniq_guild_member_pseudo" UNIQUE("guild_id", "dofus_pseudo")
+  )
+`);
+await db.execute(sql`
   ALTER TABLE guild_members
   ADD COLUMN IF NOT EXISTS "anniversary_announced_at" timestamp
 `);
