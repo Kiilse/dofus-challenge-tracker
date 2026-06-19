@@ -8,4 +8,6 @@ export const embedColors = {
   adventureView: 0x9b59b6,
   adventureList: 0x3498db,
   help: 0x3498db,
+  sabotage: 0x8e44ad,
+  sabotageScoreboard: 0x6c3483,
 } as const;
