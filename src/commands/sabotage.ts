@@ -16,7 +16,7 @@ export const sabotage: Command = {
     .addStringOption((opt) =>
       opt
         .setName('pseudo')
-        .setDescription('Pseudo Dofus de la victime')
+        .setDescription('Pseudo Dofus du saboteur')
         .setRequired(true),
     )
     .addStringOption((opt) =>
@@ -44,7 +44,7 @@ export const sabotage: Command = {
           .setColor(embedColors.sabotage)
           .setTitle('Sabotage enregistré ! 🗡️')
           .setDescription(
-            `**${dofusPseudo}**${accountMention} s'est fait saboter **${cible}** par <@${interaction.user.id}> !`,
+            `**${dofusPseudo}**${accountMention} a saboté : **${cible}** !`,
           )
           .setFooter({ text: `Enregistré par ${interaction.user.username}` })
           .setTimestamp(),

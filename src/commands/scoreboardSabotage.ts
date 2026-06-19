@@ -11,16 +11,16 @@ import {
   type MessageActionRowComponentBuilder,
 } from 'discord.js';
 import {
+  getScoreboardPage,
   getScoreboardPageByCharacter,
-  getSaboteurScoreboardPage,
 } from '../db/repositories/failedRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';
-import { rankingMedalForIndex, formatFailCount } from '../presentation/ranking.ts';
+import { rankingMedalForIndex, formatFailCount, resolveMemberDisplayName } from '../presentation/ranking.ts';
 import { PAGE_SIZE } from '../presentation/scoreboardPagination.ts';
 import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';
 
-type View = 'victimes' | 'saboteurs';
+type View = 'compte' | 'perso';
 
 const VIEW_SELECT_ID = 'sabotage_view';
 const PREV_BTN = 'sab_prev';
@@ -32,15 +32,15 @@ function buildSelectMenu(current: View): ActionRowBuilder<MessageActionRowCompon
     .setPlaceholder('Choisir la vue…')
     .addOptions(
       new StringSelectMenuOptionBuilder()
-        .setLabel('🎯 Victimes les plus ciblées')
-        .setValue('victimes')
-        .setDescription('Qui a été le plus saboté')
-        .setDefault(current === 'victimes'),
+        .setLabel('🗡️ Par compte Discord')
+        .setValue('compte')
+        .setDescription('Sabotages groupés par compte Discord')
+        .setDefault(current === 'compte'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('🗡️ Saboteurs les plus actifs')
-        .setValue('saboteurs')
-        .setDescription('Qui a le plus saboté')
-        .setDefault(current === 'saboteurs'),
+        .setLabel('👤 Par personnage')
+        .setValue('perso')
+        .setDescription('Sabotages par personnage Dofus')
+        .setDefault(current === 'perso'),
     );
   return new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(menu);
 }
@@ -74,89 +74,65 @@ function buildNavRow(
   return row.components.length > 0 ? row : null;
 }
 
-async function buildEmbed(
-  guildId: string,
-  view: View,
-  page: number,
-): Promise<{ embed: EmbedBuilder; total: number }> {
-  if (view === 'victimes') {
-    const { rows, total } = await getScoreboardPageByCharacter(guildId, 'sabotage', page, PAGE_SIZE);
-    const totalPages = Math.ceil(total / PAGE_SIZE);
-    const offset = page * PAGE_SIZE;
-
-    const embed = new EmbedBuilder()
-      .setColor(embedColors.sabotageScoreboard)
-      .setTitle('🎯 Classement — Victimes de sabotage')
-      .setTimestamp();
-
-    if (rows.length === 0) {
-      embed.setDescription('Aucun sabotage enregistré.');
-      return { embed, total };
-    }
-
-    const lines = rows.map((row, i) => {
-      const medal = rankingMedalForIndex(offset + i);
-      const mention = row.discordId ? ` (<@${row.discordId}>)` : ' *(non lié)*';
-      return `${medal} **${row.dofusPseudo}**${mention} — ${formatFailCount(row.totalFails)} sabotage${row.totalFails > 1 ? 's' : ''}`;
-    });
-
-    embed.setDescription(lines.join('\n'));
-    if (totalPages > 1) {
-      embed.setFooter({ text: `Page ${page + 1} / ${totalPages} · ${total} personnages` });
-    }
-
-    return { embed, total };
-  }
-
-  // saboteurs view
-  const { rows, total } = await getSaboteurScoreboardPage(guildId, page, PAGE_SIZE);
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const offset = page * PAGE_SIZE;
-
-  const embed = new EmbedBuilder()
-    .setColor(embedColors.sabotageScoreboard)
-    .setTitle('🗡️ Classement — Saboteurs les plus actifs')
-    .setTimestamp();
-
-  if (rows.length === 0) {
-    embed.setDescription('Aucun saboteur enregistré.');
-    return { embed, total };
-  }
-
-  const lines = rows.map((row, i) => {
-    const medal = rankingMedalForIndex(offset + i);
-    return `${medal} <@${row.discordId}> — **${row.totalSabotages}** sabotage${row.totalSabotages > 1 ? 's' : ''}`;
-  });
-
-  embed.setDescription(lines.join('\n'));
-  if (totalPages > 1) {
-    embed.setFooter({ text: `Page ${page + 1} / ${totalPages} · ${total} saboteurs` });
-  }
-
-  return { embed, total };
-}
-
 export const scoreboardSabotage: Command = {
   data: new SlashCommandBuilder()
     .setName('scoreboardsabotage')
-    .setDescription('Tableau de bord des sabotages — victimes et saboteurs'),
+    .setDescription('Classement des saboteurs — par compte ou par personnage'),
 
   async execute(interaction: ChatInputCommandInteraction) {
     const guildId = await requireGuildId(interaction);
     if (guildId === undefined) return;
 
-    if (!interaction.guild) {
+    const guild = interaction.guild;
+    if (!guild) {
       await interaction.reply({ content: 'Serveur introuvable.', flags: MessageFlags.Ephemeral });
       return;
     }
 
     await interaction.deferReply();
 
-    let currentView: View = 'victimes';
+    let currentView: View = 'compte';
     let currentPage = 0;
 
     const render = async () => {
-      const { embed, total } = await buildEmbed(guildId, currentView, currentPage);
+      const byCharacter = currentView === 'perso';
+      const { rows, total } = byCharacter
+        ? await getScoreboardPageByCharacter(guildId, 'sabotage', currentPage, PAGE_SIZE)
+        : await getScoreboardPage(guildId, 'sabotage', currentPage, PAGE_SIZE);
+
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      const offset = currentPage * PAGE_SIZE;
+
+      const embed = new EmbedBuilder()
+        .setColor(embedColors.sabotageScoreboard)
+        .setTitle(byCharacter ? '👤 Classement — Saboteurs (par personnage)' : '🗡️ Classement — Saboteurs (par compte)')
+        .setTimestamp();
+
+      if (rows.length === 0) {
+        embed.setDescription('Aucun sabotage enregistré.');
+      } else {
+        const lines = await Promise.all(
+          rows.map(async (row, i) => {
+            const medal = rankingMedalForIndex(offset + i);
+            const count = `**${row.totalFails}** sabotage${row.totalFails > 1 ? 's' : ''}`;
+            if (byCharacter) {
+              const mention = row.discordId ? ` (<@${row.discordId}>)` : ' *(non lié)*';
+              return `${medal} **${row.dofusPseudo}**${mention} — ${count}`;
+            }
+            const name = row.discordId
+              ? await resolveMemberDisplayName(guild, row.discordId)
+              : row.dofusPseudo;
+            const suffix = row.discordId ? '' : ' *(non lié)*';
+            return `${medal} **${name}**${suffix} — ${count}`;
+          }),
+        );
+        embed.setDescription(lines.join('\n'));
+        if (totalPages > 1) {
+          const unit = byCharacter ? 'personnages' : 'joueurs';
+          embed.setFooter({ text: `Page ${currentPage + 1} / ${totalPages} · ${total} ${unit}` });
+        }
+      }
+
       const selectRow = buildSelectMenu(currentView);
       const navRow = buildNavRow(currentPage, total);
       const components = navRow ? [selectRow, navRow] : [selectRow];
