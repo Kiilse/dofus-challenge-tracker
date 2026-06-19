@@ -5,6 +5,7 @@ import {
 } from 'discord.js';
 import { upsertMember } from '../db/repositories/memberRepository.ts';
 import { findByPseudo } from '../db/repositories/linkRepository.ts';
+import { getReportingChannel } from '../db/repositories/guildConfigRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';
 import type { Command } from '../types/Command.ts';
 
@@ -45,6 +46,15 @@ export const newMember: Command = {
   async execute(interaction: ChatInputCommandInteraction) {
     const guildId = await requireGuildId(interaction);
     if (guildId === undefined) return;
+
+    const reportingChannelId = await getReportingChannel(guildId);
+    if (reportingChannelId && interaction.channelId !== reportingChannelId) {
+      await interaction.reply({
+        content: `Cette commande est uniquement disponible dans le canal <#${reportingChannelId}>.`,
+        ephemeral: true,
+      });
+      return;
+    }
 
     const dofusPseudo = interaction.options.getString('pseudo', true).trim();
     const rawDate = interaction.options.getString('date', false)?.trim();
