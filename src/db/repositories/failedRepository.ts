@@ -151,49 +151,6 @@ export async function getScoreboardPageByCharacter(
   return { rows, total };
 }
 
-export type SaboteurRow = {
-  discordId: string;
-  totalSabotages: number;
-};
-
-type SaboteurSqlRow = {
-  recorded_by: string;
-  total_sabotages: number;
-};
-
-export async function getSaboteurScoreboardPage(
-  guildId: string,
-  page: number,
-  pageSize: number,
-): Promise<{ rows: SaboteurRow[]; total: number }> {
-  const offset = page * pageSize;
-
-  const [pageResult, countResult] = await Promise.all([
-    db.execute<SaboteurSqlRow>(sql`
-      SELECT recorded_by, COUNT(id)::int AS total_sabotages
-      FROM failed_challenges
-      WHERE guild_id = ${guildId} AND type = 'sabotage'
-      GROUP BY recorded_by
-      ORDER BY total_sabotages DESC
-      LIMIT ${pageSize} OFFSET ${offset}
-    `),
-    db.execute<CountSqlRow>(sql`
-      SELECT COUNT(DISTINCT recorded_by)::int AS total
-      FROM failed_challenges
-      WHERE guild_id = ${guildId} AND type = 'sabotage'
-    `),
-  ]);
-
-  const rows: SaboteurRow[] = rowsFromExecute(pageResult).map((row) => ({
-    discordId: row.recorded_by,
-    totalSabotages: Number(row.total_sabotages),
-  }));
-
-  const total = Number(rowsFromExecute(countResult)[0]?.total ?? 0);
-
-  return { rows, total };
-}
-
 export async function getFailCountForPseudos(
   guildId: string,
   pseudos: string[],

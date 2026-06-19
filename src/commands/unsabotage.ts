@@ -16,7 +16,7 @@ export const unsabotage: Command = {
     .addStringOption((opt) =>
       opt
         .setName('pseudo')
-        .setDescription('Pseudo Dofus de la victime')
+        .setDescription('Pseudo Dofus du saboteur')
         .setRequired(true),
     )
     .addStringOption((opt) =>
