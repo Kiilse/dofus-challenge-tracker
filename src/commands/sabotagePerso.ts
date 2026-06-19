@@ -12,7 +12,7 @@ import type { Command } from '../types/Command.ts';
 export const sabotagePerso: Command = {
   data: new SlashCommandBuilder()
     .setName('sabotageperso')
-    .setDescription('Affiche toutes les cibles de sabotage liées à un personnage')
+    .setDescription('Affiche tous les intitulés de sabotage liés à un personnage')
     .addStringOption((opt) =>
       opt
         .setName('pseudo')
@@ -49,7 +49,7 @@ export const sabotagePerso: Command = {
 
     const lines = targets.map((t, i) => {
       const countStr = t.count > 1 ? ` (×${t.count})` : '';
-      return `**${i + 1}.** ${t.cible}${countStr}`;
+      return `**${i + 1}.** ${t.intitule}${countStr}`;
     });
 
     await interaction.reply({
@@ -58,7 +58,7 @@ export const sabotagePerso: Command = {
           .setColor(embedColors.sabotage)
           .setTitle(`🗡️ Sabotages de ${dofusPseudo}${accountMention}`)
           .setDescription(lines.join('\n'))
-          .setFooter({ text: `${targets.length} cible(s) distincte(s) • ${total} sabotage(s) au total` })
+          .setFooter({ text: `${targets.length} intitulé(s) distinct(s) • ${total} sabotage(s) au total` })
           .setTimestamp(),
       ],
     });

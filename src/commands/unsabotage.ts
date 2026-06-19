@@ -21,8 +21,8 @@ export const unsabotage: Command = {
     )
     .addStringOption((opt) =>
       opt
-        .setName('cible')
-        .setDescription('Description exacte du sabotage à supprimer')
+        .setName('intitule')
+        .setDescription("Intitulé exact du sabotage à supprimer")
         .setRequired(true),
     ),
 
@@ -31,13 +31,13 @@ export const unsabotage: Command = {
     if (guildId === undefined) return;
 
     const dofusPseudo = interaction.options.getString('pseudo', true).trim();
-    const cible = interaction.options.getString('cible', true).trim();
+    const intitule = interaction.options.getString('intitule', true).trim();
 
-    const deleted = await deleteLastFailure(guildId, dofusPseudo, cible, 'sabotage');
+    const deleted = await deleteLastFailure(guildId, dofusPseudo, intitule, 'sabotage');
 
     if (!deleted) {
       await interaction.reply({
-        content: `Aucun sabotage trouvé pour **${dofusPseudo}** sur **${cible}**.`,
+        content: `Aucun sabotage trouvé pour **${dofusPseudo}** sur **${intitule}**.`,
         flags: MessageFlags.Ephemeral,
       });
       return;
@@ -49,7 +49,7 @@ export const unsabotage: Command = {
           .setColor(embedColors.unfailed)
           .setTitle('Sabotage supprimé')
           .setDescription(
-            `Le dernier sabotage de **${dofusPseudo}** sur **${cible}** a été supprimé.`,
+            `Le dernier sabotage de **${dofusPseudo}** sur **${intitule}** a été supprimé.`,
           )
           .setFooter({ text: `Supprimé par ${interaction.user.username}` })
           .setTimestamp(),

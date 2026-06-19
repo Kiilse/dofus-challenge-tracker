@@ -155,10 +155,10 @@ export async function getSabotageTargetsForPseudo(
   guildId: string,
   dofusPseudo: string,
 ): Promise<{ cible: string; count: number }[]> {
-  type Row = { cible: string; total: number };
+  type Row = { intitule: string; total: number };
 
   const result = await db.execute<Row>(sql`
-    SELECT challenge AS cible, COUNT(id)::int AS total
+    SELECT challenge AS intitule, COUNT(id)::int AS total
     FROM failed_challenges
     WHERE guild_id = ${guildId}
       AND type = 'sabotage'
@@ -168,7 +168,7 @@ export async function getSabotageTargetsForPseudo(
   `);
 
   return rowsFromExecute(result).map((row) => ({
-    cible: row.cible,
+    intitule: row.intitule,
     count: Number(row.total),
   }));
 }
