@@ -1,4 +1,4 @@
-import type { Client, Collection } from 'discord.js';
+import { MessageFlags, type Client, type Collection } from 'discord.js';
 import type { Command } from '../types/Command.ts';
 
 export function registerInteractionHandler(
@@ -18,7 +18,7 @@ export function registerInteractionHandler(
       const msg = {
         content:
           "Une erreur est survenue lors de l'exécution de cette commande.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       };
       if (interaction.deferred || interaction.replied) {
         await interaction.followUp(msg).catch(console.error);

@@ -25,6 +25,7 @@ export const failedChallenges = pgTable('failed_challenges', {
   guildId: text('guild_id').notNull(),
   dofusPseudo: text('dofus_pseudo').notNull(),
   challenge: text('challenge').notNull(),
+  type: text('type').notNull().default('challenge'),
   recordedAt: timestamp('recorded_at').defaultNow().notNull(),
   recordedBy: text('recorded_by').notNull(),
 });

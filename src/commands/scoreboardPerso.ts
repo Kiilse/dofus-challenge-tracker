@@ -3,7 +3,7 @@ import {
   SlashCommandBuilder,
   MessageFlags,
 } from 'discord.js';
-import { getScoreboardPage } from '../db/repositories/failedRepository.ts';
+import { getScoreboardPageByCharacter } from '../db/repositories/failedRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';
 import {
   PAGE_SIZE,
@@ -13,10 +13,10 @@ import {
 import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';
 
-export const scoreboard: Command = {
+export const scoreboardPerso: Command = {
   data: new SlashCommandBuilder()
-    .setName('scoreboard')
-    .setDescription('Affiche le classement des challenges ratés sur ce serveur'),
+    .setName('scoreboardperso')
+    .setDescription('Affiche le classement des challenges ratés par personnage'),
 
   async execute(interaction: ChatInputCommandInteraction) {
     const guildId = await requireGuildId(interaction);
@@ -31,11 +31,12 @@ export const scoreboard: Command = {
     await interaction.deferReply();
 
     const showPage = async (page: number) => {
-      const { rows, total } = await getScoreboardPage(guildId, 'challenge', page, PAGE_SIZE);
+      const { rows, total } = await getScoreboardPageByCharacter(guildId, 'challenge', page, PAGE_SIZE);
       const embed = await buildScoreboardEmbed(
         guild, rows, page, total,
-        '⚔️ Classement — Challenges ratés',
+        '⚔️ Classement par personnage — Challenges ratés',
         embedColors.failed,
+        true,
       );
       const paginationRow = buildPaginationRow(page, total);
       return { embed, components: paginationRow ? [paginationRow] : [] };

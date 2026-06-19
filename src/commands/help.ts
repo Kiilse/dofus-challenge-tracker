@@ -1,7 +1,9 @@
 import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
+  MessageFlags,
   SlashCommandBuilder,
+  MessageFlags,
 } from 'discord.js';
 import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';
@@ -18,6 +20,6 @@ export const help: Command = {
       .setTitle('Commandes du bot')
       .setDescription(buildHelpDescriptionLines().join('\n\n'));
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   },
 };

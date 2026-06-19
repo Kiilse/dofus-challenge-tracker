@@ -4,29 +4,16 @@ import {
   SlashCommandBuilder,
   MessageFlags,
 } from 'discord.js';
-import { recordFailure } from '../db/repositories/failedRepository.ts';
-import { findByPseudo } from '../db/repositories/linkRepository.ts';
+import { deleteLastFailure } from '../db/repositories/failedRepository.ts';
 import { requireGuildId } from '../discord/requireGuild.ts';
 import { embedColors } from '../presentation/theme.ts';
 import type { Command } from '../types/Command.ts';
+import { parseFailedPhrase } from './failed.ts';
 
-const FAILED_PATTERN = /^(\S+)\s+a\s+fait\s+échouer\s+le\s+challenge\s+(.+)$/iu;
-
-export function parseFailedPhrase(
-  raw: string,
-): { pseudo: string; challenge: string } | null {
-  const phrase = raw.trim().normalize('NFC');
-  const match = FAILED_PATTERN.exec(phrase);
-  if (!match) return null;
-  const challenge = match[2].trim();
-  if (!challenge) return null;
-  return { pseudo: match[1], challenge };
-}
-
-export const failed: Command = {
+export const unfailed: Command = {
   data: new SlashCommandBuilder()
-    .setName('failed')
-    .setDescription('Enregistre un challenge raté')
+    .setName('unfailed')
+    .setDescription('Supprime le dernier challenge raté enregistré pour un personnage')
     .addStringOption((opt) =>
       opt
         .setName('phrase')
@@ -50,22 +37,28 @@ export const failed: Command = {
     }
 
     const { pseudo: dofusPseudo, challenge } = parsed;
-    await recordFailure(guildId, dofusPseudo, challenge, interaction.user.id, 'challenge');
+    const deleted = await deleteLastFailure(guildId, dofusPseudo, challenge, 'challenge');
 
-    const link = await findByPseudo(guildId, dofusPseudo);
-    const accountMention = link ? ` (<@${link.discordId}>)` : '';
+    if (!deleted) {
+      await interaction.reply({
+        content: `Aucun échec trouvé pour **${dofusPseudo}** sur le challenge **${challenge}**.`,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
 
     await interaction.reply({
       embeds: [
         new EmbedBuilder()
-          .setColor(embedColors.failed)
-          .setTitle('Challenge raté !')
+          .setColor(embedColors.unfailed)
+          .setTitle('Échec supprimé')
           .setDescription(
-            `**${dofusPseudo}**${accountMention} a fait échouer le challenge **${challenge}** !`,
+            `Le dernier échec de **${dofusPseudo}** sur le challenge **${challenge}** a été supprimé.`,
           )
-          .setFooter({ text: `Enregistré par ${interaction.user.username}` })
+          .setFooter({ text: `Supprimé par ${interaction.user.username}` })
           .setTimestamp(),
       ],
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

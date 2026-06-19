@@ -2,6 +2,7 @@ import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
   SlashCommandBuilder,
+  MessageFlags,
 } from 'discord.js';
 import {
   createAdventure,
@@ -40,7 +41,7 @@ async function handleCreate(
   if (pseudos.length === 0) {
     await interaction.reply({
       content: 'Tu dois fournir au moins un personnage.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -51,7 +52,7 @@ async function handleCreate(
     if (isUniqueViolation(err)) {
       await interaction.reply({
         content: `Une aventure nommée **${name}** existe déjà sur ce serveur.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
@@ -59,7 +60,7 @@ async function handleCreate(
     await interaction.reply({
       content:
         "Impossible de créer l'aventure pour le moment. Réessaie plus tard.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -70,7 +71,7 @@ async function handleCreate(
     .setDescription(
       `**${name}** a été créée avec ${pseudos.length} membre(s) :\n${pseudos.map((p) => `• ${p}`).join('\n')}`,
     );
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }
 
 async function handleView(
@@ -81,7 +82,7 @@ async function handleView(
   if (!guild) {
     await interaction.reply({
       content: 'Serveur introuvable.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -151,7 +152,7 @@ async function handleList(
   if (advList.length === 0) {
     await interaction.reply({
       content: 'Aucune aventure créée sur ce serveur.',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -162,7 +163,7 @@ async function handleList(
     .setColor(embedColors.adventureList)
     .setTitle('Aventures de ce serveur')
     .setDescription(lines.join('\n'));
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }
 
 export const adventure: Command = {

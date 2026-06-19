@@ -1,28 +1,66 @@
-import { and, count, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../client.ts';
 import { failedChallenges, userLinks } from '../schema.ts';
 
-export type ScoreboardLinkedRow = {
-  discordId: string;
-  totalFails: number;
-};
+export type FailedType = 'challenge' | 'succes' | 'sabotage';
 
-export type ScoreboardUnlinkedRow = {
+export type ScoreboardRow = {
   dofusPseudo: string;
+  discordId: string | null;
   totalFails: number;
 };
 
-type UnlinkedSqlRow = { dofus_pseudo: string; total_fails: number };
+type ScoreboardPageSqlRow = {
+  group_key: string;
+  dofus_pseudo: string;
+  discord_id: string | null;
+  total_fails: number;
+};
+
+type ScoreboardByCharSqlRow = {
+  dofus_pseudo: string;
+  discord_id: string | null;
+  total_fails: number;
+};
+
+type CountSqlRow = { total: number };
 
 export async function recordFailure(
   guildId: string,
   dofusPseudo: string,
   challenge: string,
   recordedBy: string,
+  type: FailedType,
 ) {
   await db
     .insert(failedChallenges)
-    .values({ guildId, dofusPseudo, challenge, recordedBy });
+    .values({ guildId, dofusPseudo, challenge, recordedBy, type });
+}
+
+export async function deleteLastFailure(
+  guildId: string,
+  dofusPseudo: string,
+  challenge: string,
+  type: FailedType,
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: failedChallenges.id })
+    .from(failedChallenges)
+    .where(
+      and(
+        eq(failedChallenges.guildId, guildId),
+        eq(failedChallenges.type, type),
+        sql`lower(${failedChallenges.dofusPseudo}) = lower(${dofusPseudo})`,
+        sql`lower(${failedChallenges.challenge}) = lower(${challenge})`,
+      ),
+    )
+    .orderBy(desc(failedChallenges.recordedAt))
+    .limit(1);
+
+  if (rows.length === 0) return false;
+
+  await db.delete(failedChallenges).where(eq(failedChallenges.id, rows[0]!.id));
+  return true;
 }
 
 function rowsFromExecute<T>(result: { rows?: T[] } | T[]): T[] {
@@ -30,53 +68,87 @@ function rowsFromExecute<T>(result: { rows?: T[] } | T[]): T[] {
   return result.rows ?? [];
 }
 
-export async function getScoreboard(guildId: string): Promise<{
-  linked: ScoreboardLinkedRow[];
-  unlinked: ScoreboardUnlinkedRow[];
-}> {
-  const linkedRaw = await db
-    .select({
-      discordId: userLinks.discordId,
-      totalFails: count(failedChallenges.id),
-    })
-    .from(userLinks)
-    .leftJoin(
-      failedChallenges,
-      and(
-        eq(failedChallenges.guildId, userLinks.guildId),
-        sql`lower(${failedChallenges.dofusPseudo}) = lower(${userLinks.dofusPseudo})`,
-      ),
-    )
-    .where(eq(userLinks.guildId, guildId))
-    .groupBy(userLinks.discordId)
-    .orderBy(sql`count(${failedChallenges.id}) desc`);
+export async function getScoreboardPage(
+  guildId: string,
+  type: FailedType,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: ScoreboardRow[]; total: number }> {
+  const offset = page * pageSize;
 
-  const linked: ScoreboardLinkedRow[] = linkedRaw.map((row) => ({
-    discordId: row.discordId,
-    totalFails: Number(row.totalFails),
+  const [pageResult, countResult] = await Promise.all([
+    db.execute<ScoreboardPageSqlRow>(sql`
+      SELECT
+        ul.discord_id AS group_key,
+        ul.discord_id,
+        MIN(fc.dofus_pseudo) AS dofus_pseudo,
+        COUNT(fc.id)::int AS total_fails
+      FROM failed_challenges fc
+      INNER JOIN user_links ul
+        ON ul.guild_id = fc.guild_id
+        AND lower(ul.dofus_pseudo) = lower(fc.dofus_pseudo)
+      WHERE fc.guild_id = ${guildId} AND fc.type = ${type}
+      GROUP BY ul.discord_id
+      ORDER BY total_fails DESC
+      LIMIT ${pageSize} OFFSET ${offset}
+    `),
+    db.execute<CountSqlRow>(sql`
+      SELECT COUNT(DISTINCT ul.discord_id)::int AS total
+      FROM failed_challenges fc
+      INNER JOIN user_links ul
+        ON ul.guild_id = fc.guild_id
+        AND lower(ul.dofus_pseudo) = lower(fc.dofus_pseudo)
+      WHERE fc.guild_id = ${guildId} AND fc.type = ${type}
+    `),
+  ]);
+
+  const rows: ScoreboardRow[] = rowsFromExecute(pageResult).map((row) => ({
+    dofusPseudo: row.dofus_pseudo,
+    discordId: row.discord_id ?? null,
+    totalFails: Number(row.total_fails),
   }));
 
-  const unlinkedResult = await db.execute<UnlinkedSqlRow>(sql`
-    SELECT fc.dofus_pseudo, COUNT(fc.id)::int AS total_fails
-    FROM failed_challenges fc
-    WHERE fc.guild_id = ${guildId}
-      AND NOT EXISTS (
-        SELECT 1 FROM user_links ul
-        WHERE ul.guild_id = ${guildId}
-          AND lower(ul.dofus_pseudo) = lower(fc.dofus_pseudo)
-      )
-    GROUP BY fc.dofus_pseudo
-    ORDER BY total_fails DESC
-  `);
+  const total = Number(rowsFromExecute(countResult)[0]?.total ?? 0);
 
-  const unlinked: ScoreboardUnlinkedRow[] = rowsFromExecute(unlinkedResult).map(
-    (row) => ({
-      dofusPseudo: row.dofus_pseudo,
-      totalFails: Number(row.total_fails),
-    }),
-  );
+  return { rows, total };
+}
 
-  return { linked, unlinked };
+export async function getScoreboardPageByCharacter(
+  guildId: string,
+  type: FailedType,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: ScoreboardRow[]; total: number }> {
+  const offset = page * pageSize;
+
+  const [pageResult, countResult] = await Promise.all([
+    db.execute<ScoreboardByCharSqlRow>(sql`
+      SELECT fc.dofus_pseudo, ul.discord_id, COUNT(fc.id)::int AS total_fails
+      FROM failed_challenges fc
+      LEFT JOIN user_links ul
+        ON ul.guild_id = fc.guild_id
+        AND lower(ul.dofus_pseudo) = lower(fc.dofus_pseudo)
+      WHERE fc.guild_id = ${guildId} AND fc.type = ${type}
+      GROUP BY fc.dofus_pseudo, ul.discord_id
+      ORDER BY total_fails DESC
+      LIMIT ${pageSize} OFFSET ${offset}
+    `),
+    db.execute<CountSqlRow>(sql`
+      SELECT COUNT(DISTINCT lower(dofus_pseudo))::int AS total
+      FROM failed_challenges
+      WHERE guild_id = ${guildId} AND type = ${type}
+    `),
+  ]);
+
+  const rows: ScoreboardRow[] = rowsFromExecute(pageResult).map((row) => ({
+    dofusPseudo: row.dofus_pseudo,
+    discordId: row.discord_id ?? null,
+    totalFails: Number(row.total_fails),
+  }));
+
+  const total = Number(rowsFromExecute(countResult)[0]?.total ?? 0);
+
+  return { rows, total };
 }
 
 export async function getFailCountForPseudos(
