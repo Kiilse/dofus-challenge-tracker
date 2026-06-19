@@ -4,11 +4,25 @@ import { commands } from './commands/index.ts';
 import { config } from './config.ts';
 import { db } from './db/client.ts';
 import { registerInteractionHandler } from './interactions/interactionCreate.ts';
+import { startAnniversaryScheduler } from './scheduler/anniversaryScheduler.ts';
 
 // Idempotent guard: ensures the `type` column exists even if drizzle-kit migration was skipped
 await db.execute(sql`
   ALTER TABLE failed_challenges
   ADD COLUMN IF NOT EXISTS "type" text NOT NULL DEFAULT 'challenge'
+`);
+
+// Idempotent guard: guild_config table and anniversary column
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS "guild_config" (
+    "guild_id" text PRIMARY KEY NOT NULL,
+    "reporting_channel_id" text NOT NULL,
+    "updated_at" timestamp DEFAULT now() NOT NULL
+  )
+`);
+await db.execute(sql`
+  ALTER TABLE guild_members
+  ADD COLUMN IF NOT EXISTS "anniversary_announced_at" timestamp
 `);
 
 // Register slash commands with Discord
@@ -37,6 +51,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once('clientReady', (c) => {
   console.log(`✓ Bot connecté en tant que ${c.user.tag}`);
+  startAnniversaryScheduler(c);
 });
 
 registerInteractionHandler(client, commands);
